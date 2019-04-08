@@ -17,7 +17,7 @@ if __name__=='__main__':
 	vel_constr = 5
 	angle_constr = 3.14159265/4
 	yaw_constr = 3.14159265*4
-	input_constr = 10
+	input_constr = 6
 	x0pos=[0,0,0]
 	x0vel=[0,0,0]
 	x0ang=[0,0,3]
@@ -90,9 +90,9 @@ if __name__=='__main__':
 	angrate_W=vertcat(angrate_W_x,angrate_W_y,angrate_W_z)
 	xdot = vertcat(vel, new_acc, angrate_W, dangvel_Body_dt)*tf
 #
-	L = (u1**2 + u2**2 + u3**2 + u4**2 +1)*tf
+	L = (u1**2 + u2**2 + u3**2 + u4**2)*tf
 #
-	M = 1
+	M = 2
 	
 	f = Function('f', [x, u, tf],[xdot, L])
 	X0 = MX.sym('X0', 12)
