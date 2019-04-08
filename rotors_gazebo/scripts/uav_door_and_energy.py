@@ -16,7 +16,15 @@ def project_parameters():
 if __name__=='__main__':
 	vel_constr = 5
 	angle_constr = 3.14159265/4
-	yaw_constr = 3.14159265*4
+
+	yaw_lock_angle = 3
+	yaw_locked = 1
+	if yaw_locked:
+		yaw_constr_plus = 3
+		yaw_constr_minus = 3
+	else:
+		yaw_constr_plus = 3.14159265*4
+		yaw_constr_minus = -3.14159265*4
 	input_constr = 6
 	x0pos=[0,0,0]
 	x0vel=[0,0,0]
@@ -92,7 +100,7 @@ if __name__=='__main__':
 #
 	L = (u1**2 + u2**2 + u3**2 + u4**2)*tf
 #
-	M = 2
+	M = 1
 	
 	f = Function('f', [x, u, tf],[xdot, L])
 	X0 = MX.sym('X0', 12)
@@ -157,11 +165,11 @@ if __name__=='__main__':
 		Xk = MX.sym('X_' + str(k+1), 12)
 		w   += [Xk]
 		if k!=N-1:
-			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,-yaw_constr, -inf,-inf,-inf]
-			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,yaw_constr, inf,inf,inf]
+			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,yaw_constr_minus, -inf,-inf,-inf]
+			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,yaw_constr_plus, inf,inf,inf]
 		else:
-			lbw += x1pos + [-vel_constr,x1vel_y,x1vel_z, -angle_constr,-angle_constr,-yaw_constr, -inf,-inf,-inf]
-			ubw += x1pos +  [vel_constr,x1vel_y,x1vel_z, angle_constr,angle_constr,yaw_constr, inf,inf,inf]
+			lbw += x1pos + [-vel_constr,x1vel_y,x1vel_z, -angle_constr,-angle_constr,yaw_constr_minus, -inf,-inf,-inf]
+			ubw += x1pos +  [vel_constr,x1vel_y,x1vel_z, angle_constr,angle_constr,yaw_constr_plus, inf,inf,inf]
 		w0  += x0pos+[0,0,0, 0,0,3, 0,0,0]
 		g   += [Xk_end-Xk]
 		lbg += [0,0,0, 0,0,0, 0,0,0, 0,0,0]
@@ -181,11 +189,11 @@ if __name__=='__main__':
 		Xk = MX.sym('X_' + str(k+1), 12)
 		w   += [Xk]
 		if k!=2*N-1:
-			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,-yaw_constr, -inf,-inf,-inf]
-			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,yaw_constr, inf,inf,inf]
+			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,yaw_constr_minus, -inf,-inf,-inf]
+			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,yaw_constr_plus, inf,inf,inf]
 		else:
-			lbw += x2pos + [x2vel_x,-vel_constr,x2vel_z, -angle_constr,-angle_constr,-yaw_constr, -inf,-inf,-inf]
-			ubw += x2pos + [x2vel_x,vel_constr,x2vel_z, angle_constr,angle_constr,yaw_constr, inf,inf,inf]
+			lbw += x2pos + [x2vel_x,-vel_constr,x2vel_z, -angle_constr,-angle_constr,yaw_constr_minus, -inf,-inf,-inf]
+			ubw += x2pos + [x2vel_x,vel_constr,x2vel_z, angle_constr,angle_constr,yaw_constr_plus, inf,inf,inf]
 		w0  += x1pos+[0,0,0, 0,0,3, 0,0,0]
 		g   += [Xk_end-Xk]
 		lbg += [0,0,0, 0,0,0, 0,0,0, 0,0,0]
@@ -204,8 +212,8 @@ if __name__=='__main__':
 		Xk = MX.sym('X_' + str(k+1), 12)
 		w   += [Xk]
 		if k!=3*N-1:
-			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,-yaw_constr, -inf,-inf,-inf]
-			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,yaw_constr, inf,inf,inf]
+			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,yaw_constr_minus, -inf,-inf,-inf]
+			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,yaw_constr_plus, inf,inf,inf]
 		else:
 			lbw += xFpos + xFvel + xFang + xFangrate
 			ubw += xFpos + xFvel + xFang + xFangrate
