@@ -16,7 +16,6 @@ def project_parameters():
 if __name__=='__main__':
 	vel_constr = 5
 	angle_constr = 3.14159265/4
-	yaw_constr = 3.14159265*4
 	input_constr = 10
 	x0pos=[0,0,0]
 	x0vel=[0,0,0]
@@ -56,9 +55,9 @@ if __name__=='__main__':
 	u3 = MX.sym('u3')
 	u4 = MX.sym('u4')
 	u = vertcat(u1, u2, u3, u4)
-#
-	tf = MX.sym('tf')
-#
+
+	# tf = MX.sym('tf')
+
 	gravity, mass, kF, kM, Len = project_parameters()
 	dangvel_Body_dt = vertcat(kF*Len*(u2-u4), kF*Len*(-u1+u3), kM*(u1-u2+u3-u4))
 	abs_acc = (u1+u2+u3+u4)/mass
@@ -88,29 +87,29 @@ if __name__=='__main__':
 	angrate_W_y = R_B2W_21*angrate_x + R_B2W_22*angrate_y + R_B2W_23*angrate_z
 	angrate_W_z = R_B2W_31*angrate_x + R_B2W_32*angrate_y + R_B2W_33*angrate_z
 	angrate_W=vertcat(angrate_W_x,angrate_W_y,angrate_W_z)
-	xdot = vertcat(vel, new_acc, angrate_W, dangvel_Body_dt)*tf
-#
-	L = (u1**2 + u2**2 + u3**2 + u4**2 +1)*tf
-#
-	M = 1
+	xdot = vertcat(vel, new_acc, angrate_W, dangvel_Body_dt)
+
+	L = (u1**2 + u2**2 + u3**2 + u4**2)
+
+	M = 4
 	
-	f = Function('f', [x, u, tf],[xdot, L])
+	f = Function('f', [x, u],[xdot, L])
 	X0 = MX.sym('X0', 12)
 	U=MX.sym('U',4)
-	TF = MX.sym('TF')
-#
-	DT = 1. / N / M
-#
+	T = MX.sym('T')
+
+	DT = T / N / M
+
 	X=X0
 	Q=0
 	for j in range(M):
-		k1, k1_q = f(X, U, TF)
-		k2, k2_q = f(X + DT/2 * k1, U, TF)
-		k3, k3_q = f(X + DT/2 * k2, U, TF)
-		k4, k4_q = f(X + DT * k3, U, TF)
+		k1, k1_q = f(X, U)
+		k2, k2_q = f(X + DT/2 * k1, U)
+		k3, k3_q = f(X + DT/2 * k2, U)
+		k4, k4_q = f(X + DT * k3, U)
 		X=X+DT/6*(k1 +2*k2 +2*k3 +k4)
 		Q = Q + DT/6*(k1_q + 2*k2_q + 2*k3_q + k4_q)
-	F = Function('F', [X0, U, TF], [X, Q],['x0','p','tf_interval'],['xf','qf'])
+	F = Function('F', [X0, U, T], [X, Q],['x0','p','tf_interval'],['xf','qf'])
 
 	# Evaluate at a test point
 	# Fk = F(x0=[0.2,0.3],p=0.4)
@@ -127,12 +126,12 @@ if __name__=='__main__':
 	lbg = []
 	ubg = []
 	# "Lift" initial conditions
-#
-	t_interval_1 = MX.sym('t_interval_1')
-	t_interval_2 = MX.sym('t_interval_2')
-	t_interval_3 = MX.sym('t_interval_3')
-#
-
+	# t_interval_1 = MX.sym('t_interval_1')
+	# t_interval_2 = MX.sym('t_interval_2')
+	# t_interval_3 = MX.sym('t_interval_3')
+	t_interval_1 = 2.1
+	t_interval_2 = 2.8
+	t_interval_3 = 2.3
 	Xk = MX.sym('X0', 12)
 	w += [Xk]
 	# this initial condition has the specified bound, 
@@ -157,12 +156,12 @@ if __name__=='__main__':
 		Xk = MX.sym('X_' + str(k+1), 12)
 		w   += [Xk]
 		if k!=N-1:
-			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,-yaw_constr, -inf,-inf,-inf]
-			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,yaw_constr, inf,inf,inf]
+			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,-inf, -inf,-inf,-inf]
+			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,inf, inf,inf,inf]
 		else:
-			lbw += x1pos + [-vel_constr,x1vel_y,x1vel_z, -angle_constr,-angle_constr,-yaw_constr, -inf,-inf,-inf]
-			ubw += x1pos +  [vel_constr,x1vel_y,x1vel_z, angle_constr,angle_constr,yaw_constr, inf,inf,inf]
-		w0  += x0pos+[0,0,0, 0,0,3, 0,0,0]
+			lbw += x1pos + [-vel_constr,x1vel_y,x1vel_z, -angle_constr,-angle_constr,-inf, -inf,-inf,-inf]
+			ubw += x1pos +  [vel_constr,x1vel_y,x1vel_z, angle_constr,angle_constr,inf, inf,inf,inf]
+		w0  += x1pos+[0,0,0, 0,0,3, 0,0,0]
 		g   += [Xk_end-Xk]
 		lbg += [0,0,0, 0,0,0, 0,0,0, 0,0,0]
 		ubg += [0,0,0, 0,0,0, 0,0,0, 0,0,0]
@@ -181,12 +180,12 @@ if __name__=='__main__':
 		Xk = MX.sym('X_' + str(k+1), 12)
 		w   += [Xk]
 		if k!=2*N-1:
-			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,-yaw_constr, -inf,-inf,-inf]
-			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,yaw_constr, inf,inf,inf]
+			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,-inf, -inf,-inf,-inf]
+			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,inf, inf,inf,inf]
 		else:
-			lbw += x2pos + [x2vel_x,-vel_constr,x2vel_z, -angle_constr,-angle_constr,-yaw_constr, -inf,-inf,-inf]
-			ubw += x2pos + [x2vel_x,vel_constr,x2vel_z, angle_constr,angle_constr,yaw_constr, inf,inf,inf]
-		w0  += x1pos+[0,0,0, 0,0,3, 0,0,0]
+			lbw += x2pos + [x2vel_x,-vel_constr,x2vel_z, -angle_constr,-angle_constr,-inf, -inf,-inf,-inf]
+			ubw += x2pos + [x2vel_x,vel_constr,x2vel_z, angle_constr,angle_constr,inf, inf,inf,inf]
+		w0  += x2pos+[0,0,0, 0,0,3, 0,0,0]
 		g   += [Xk_end-Xk]
 		lbg += [0,0,0, 0,0,0, 0,0,0, 0,0,0]
 		ubg += [0,0,0, 0,0,0, 0,0,0, 0,0,0]
@@ -204,34 +203,36 @@ if __name__=='__main__':
 		Xk = MX.sym('X_' + str(k+1), 12)
 		w   += [Xk]
 		if k!=3*N-1:
-			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,-yaw_constr, -inf,-inf,-inf]
-			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,yaw_constr, inf,inf,inf]
+			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,-inf, -inf,-inf,-inf]
+			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,inf, inf,inf,inf]
 		else:
 			lbw += xFpos + xFvel + xFang + xFangrate
 			ubw += xFpos + xFvel + xFang + xFangrate
-		w0  += x2pos + [0,0,0, 0,0,3, 0,0,0]
+		w0  += xFpos + [0,0,0, 0,0,3, 0,0,0]
 		g   += [Xk_end-Xk]
 		lbg += [0,0,0, 0,0,0, 0,0,0, 0,0,0]
 		ubg += [0,0,0, 0,0,0, 0,0,0, 0,0,0]
-	w += [t_interval_1,t_interval_2,t_interval_3]
-	lbw += [0.1,0.1,0.1]
-	ubw += [inf,inf,inf]
-	w0 += [2,3,2]
+	# w += [t_interval_1,t_interval_2,t_interval_3]
+	# lbw += [0,0,0]
+	# ubw += [inf,inf,inf]
+	# w0 += [2,3,2]
 	# g += [t_interval_1,t_interval_2,t_interval_3]
 	# lbg += [0,0,0]
 	# ubg += [inf,inf,inf]
 	prob = {'f': J, 'x': vertcat(*w), 'g': vertcat(*g)}
 	solver = nlpsol('solver', 'ipopt', prob);
 	sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg)
-	w_opt_all = sol['x'].full().flatten()
-
-	t1_opt = w_opt_all[-3]
-	t2_opt = w_opt_all[-2]
-	t3_opt = w_opt_all[-1]
-	print(t1_opt)
-	print(t2_opt)
-	print(t3_opt)
-	w_opt = np.delete(w_opt_all, [-3,-2,-1])
+	w_opt = sol['x'].full().flatten()
+	# t1_opt = w_opt_all[-3]
+	# t2_opt = w_opt_all[-2]
+	# t3_opt = w_opt_all[-1]
+	t1_opt = t_interval_1
+	t2_opt = t_interval_2
+	t3_opt = t_interval_3
+	# print(t1_opt)
+	# print(t2_opt)
+	# print(t3_opt)
+	# w_opt = np.delete(w_opt_all, [-3,-2,-1])
 	pos_x_opt = w_opt[0::16]
 	pos_y_opt = w_opt[1::16]
 	pos_z_opt = w_opt[2::16]
