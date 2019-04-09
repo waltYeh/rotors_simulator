@@ -22,7 +22,7 @@ def project_parameters():
 	return gravity, mass, kF, kM, Len
 
 def handle_traj_gen(req):
-	vel_constr = 5
+	vel_constr = 2
 	angle_constr = 3.14159265/4
 	yaw_init_state = 0
 	yaw_locked = True
@@ -77,10 +77,10 @@ def handle_traj_gen(req):
 	gravity, mass, kF, kM, Len = project_parameters()
 	dangvel_Body_dt = vertcat(kF*Len*(u2-u4), kF*Len*(-u1+u3), kM*(u1-u2+u3-u4))
 	abs_acc = (u1+u2+u3+u4)/mass
-	cp = cos(ang_y)
-	sp = sin(ang_y)
-	sr = sin(ang_x)
-	cr = cos(ang_x)
+	cp = cos(-ang_y)
+	sp = sin(-ang_y)
+	sr = sin(-ang_x)
+	cr = cos(-ang_x)
 	sy = sin(ang_z)
 	cy = cos(ang_z)
 	R_B2W_11 = cp * cy
