@@ -5,6 +5,8 @@ multiply the J1,J2,J3 with the respective time interval as costs,
 no need to add 1*time_interval
 fixed the bounds for yaw
 change the lower bound for time interval to 0.1, else infeasible with 0
+similar as function handle in matlab, there is a lambda in python, defining what can be passed as constant into a function which calls another function 
+https://stackoverflow.com/questions/5743291/python-function-handle-ala-matlab
 
 2. py in ros
 make executable chmod +x scripts/add_two_ints_server.py

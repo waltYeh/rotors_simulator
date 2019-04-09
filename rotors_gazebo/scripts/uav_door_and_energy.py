@@ -13,7 +13,49 @@ def project_parameters():
 	Len=0.225
 	gravity=9.81
 	return gravity, mass, kF, kM, Len
-
+def diff_eq_time_trans(tau,x,u,t_trans):
+	gravity, mass, kF, kM, Len = project_parameters()
+	dangvel_Body_dt = vertcat(kF*Len*(u[1]-u[3]), kF*Len*(-u[0]+u[2]), kM*(u[0]-u[1]+u[2]-u[3]))
+	abs_acc = (u[0]+u[1]+u[2]+u[3])/mass
+	vel = vertcat(x[3],x[4],x[5])
+	ang_x = x[6]
+	ang_y = x[7]
+	ang_z = x[8]
+	angrate_x = x[9]
+	angrate_y = x[10]
+	angrate_z = x[11]
+	cp = cos(-ang_y)
+	sp = sin(-ang_y)
+	sr = sin(-ang_x)
+	cr = cos(-ang_x)
+	sy = sin(ang_z)
+	cy = cos(ang_z)
+	R_B2W_11 = cp * cy
+	R_B2W_21 = ((sr * sp * cy) - (cr * sy))
+	R_B2W_31 = ((cr * sp * cy) + (sr * sy))
+	R_B2W_12 = cp * sy
+	R_B2W_22 = ((sr * sp * sy) + (cr * cy))
+	R_B2W_32 = ((cr * sp * sy) - (sr * cy))
+	R_B2W_13 = -sp
+	R_B2W_23 = sr * cp
+	R_B2W_33 = cr * cp
+	new_acc_x = abs_acc * R_B2W_13
+	new_acc_y = abs_acc * R_B2W_23
+	new_acc_z = abs_acc * R_B2W_33 - gravity
+	new_acc = vertcat(new_acc_x, new_acc_y, new_acc_z)
+	angrate_W_x = R_B2W_11*angrate_x + R_B2W_12*angrate_y + R_B2W_13*angrate_z
+	angrate_W_y = R_B2W_21*angrate_x + R_B2W_22*angrate_y + R_B2W_23*angrate_z
+	angrate_W_z = R_B2W_31*angrate_x + R_B2W_32*angrate_y + R_B2W_33*angrate_z
+	angrate_W=vertcat(angrate_W_x,angrate_W_y,angrate_W_z)
+	xdot = vertcat(vel, new_acc, angrate_W, dangvel_Body_dt)*t_trans
+	return xdot
+def rk4(ode, h, t, x, u):
+	k1 = ode(t,x,u);
+	k2 = ode(t,x+h/2*k1,u);
+	k3 = ode(t,x+h/2*k2,u);
+	k4 = ode(t,x+h*k3,  u);
+	xf = x + h/6 * (k1 + 2*k2 + 2*k3 + k4); 
+	return xf
 if __name__=='__main__':
 	vel_constr = 2
 	angle_constr = 3.14159265/4
@@ -41,89 +83,36 @@ if __name__=='__main__':
 	xFang = [0,0,yaw_init_state]
 	xFangrate=[0,0,0]
 	N = 25
-	pos_x = MX.sym('pos_x')
-	pos_y = MX.sym('pos_y')
-	pos_z = MX.sym('pos_z')
-	pos=vertcat(pos_x,pos_y,pos_z)
-	vel_x = MX.sym('vel_x')
-	vel_y = MX.sym('vel_y')
-	vel_z = MX.sym('vel_z')
-	vel=vertcat(vel_x,vel_y,vel_z)
-	ang_x = MX.sym('ang_x')
-	ang_y = MX.sym('ang_y')
-	ang_z = MX.sym('ang_z')
-	ang=vertcat(ang_x,ang_y,ang_z)
-	angrate_x = MX.sym('angrate_x')
-	angrate_y = MX.sym('angrate_y')
-	angrate_z = MX.sym('angrate_z')
-	angrate=vertcat(angrate_x,angrate_y,angrate_z)
-	x = vertcat(pos,vel,ang,angrate)
-
-	u1 = MX.sym('u1')
-	u2 = MX.sym('u2')
-	u3 = MX.sym('u3')
-	u4 = MX.sym('u4')
-	u = vertcat(u1, u2, u3, u4)
-#
+	# x = vertcat(pos,vel,ang,angrate)
+	x=MX.sym('x',12)
+	u=MX.sym('u',4)
 	t_transf = MX.sym('t_transf')
+	t = MX.sym('t')
 #
-	gravity, mass, kF, kM, Len = project_parameters()
-	dangvel_Body_dt = vertcat(kF*Len*(u2-u4), kF*Len*(-u1+u3), kM*(u1-u2+u3-u4))
-	abs_acc = (u1+u2+u3+u4)/mass
-	cp = cos(-ang_y)
-	sp = sin(-ang_y)
-	sr = sin(-ang_x)
-	cr = cos(-ang_x)
-	sy = sin(ang_z)
-	cy = cos(ang_z)
-	R_B2W_11 = cp * cy
-	R_B2W_21 = ((sr * sp * cy) - (cr * sy))
-	R_B2W_31 = ((cr * sp * cy) + (sr * sy))
-	R_B2W_12 = cp * sy
-	R_B2W_22 = ((sr * sp * sy) + (cr * cy))
-	R_B2W_32 = ((cr * sp * sy) - (sr * cy))
-	R_B2W_13 = -sp
-	R_B2W_23 = sr * cp
-	R_B2W_33 = cr * cp
-	# R_B2W_13 = ((cr * sp * cy) + (sr * sy))
-	# R_B2W_23 = ((cr * sp * sy) - (sr * cy))
-	# R_B2W_33 = cr * cp
-	new_acc_x = abs_acc * R_B2W_13
-	new_acc_y = abs_acc * R_B2W_23
-	new_acc_z = abs_acc * R_B2W_33 - gravity
-	new_acc = vertcat(new_acc_x, new_acc_y, new_acc_z)
-	angrate_W_x = R_B2W_11*angrate_x + R_B2W_12*angrate_y + R_B2W_13*angrate_z
-	angrate_W_y = R_B2W_21*angrate_x + R_B2W_22*angrate_y + R_B2W_23*angrate_z
-	angrate_W_z = R_B2W_31*angrate_x + R_B2W_32*angrate_y + R_B2W_33*angrate_z
-	angrate_W=vertcat(angrate_W_x,angrate_W_y,angrate_W_z)
-	xdot = vertcat(vel, new_acc, angrate_W, dangvel_Body_dt)*t_transf
-#
-	L = (u1**2 + u2**2 + u3**2 + u4**2)*t_transf
-#
-	M = 1
+	xdot = diff_eq_time_trans(0,x,u,t_transf)
+	L = (u[0]**2 + u[1]**2 + u[2]**2 + u[3]**2)*t_transf
 	
-	f = Function('f', [x, u, t_transf],[xdot, L])
+	f = Function('f', [t, x, u, t_transf],[xdot])
+	fq = Function('fq', [t, x, u, t_transf],[L])
 	X0 = MX.sym('X0', 12)
 	U=MX.sym('U',4)
 	TF = MX.sym('TF')
-#
+	M = 1
 	DT = 1. / N / M
-#
 	X=X0
 	Q=0
+	f_handle = lambda t,x,u: f(t,x,u,TF)
+	fq_handle = lambda t,x,u: fq(t,x,u,TF)
 	for j in range(M):
-		k1, k1_q = f(X, U, TF)
-		k2, k2_q = f(X + DT/2 * k1, U, TF)
-		k3, k3_q = f(X + DT/2 * k2, U, TF)
-		k4, k4_q = f(X + DT * k3, U, TF)
-		X=X+DT/6*(k1 +2*k2 +2*k3 +k4)
-		Q = Q + DT/6*(k1_q + 2*k2_q + 2*k3_q + k4_q)
+		X=rk4(f_handle, DT, 0., X, U)
+		Q=rk4(fq_handle, DT, 0., 0, U)
+		# k1_q = fq(0,X, U, TF)
+		# k2_q = fq(0,X + DT/2 * k1, U, TF)
+		# k3_q = fq(0,X + DT/2 * k2, U, TF)
+		# k4_q = fq(0,X + DT * k3, U, TF)
+		# # X=X+DT/6*(k1 +2*k2 +2*k3 +k4)
+		# Q = Q + DT/6*(k1_q + 2*k2_q + 2*k3_q + k4_q)
 	F = Function('F', [X0, U, TF], [X, Q],['x0','p','tf_interval'],['xf','qf'])
-
-	# Evaluate at a test point
-	# Fk = F(x0=[0.2,0.3],p=0.4)
-	# print(Fk['xf'])
-	# print(Fk['qf'])
 
 	# Start with an empty NLP
 	w=[]
@@ -140,7 +129,6 @@ if __name__=='__main__':
 	t_interval_2 = MX.sym('t_interval_2')
 	t_interval_3 = MX.sym('t_interval_3')
 #
-
 	Xk = MX.sym('X0', 12)
 	w += [Xk]
 	# this initial condition has the specified bound, 
@@ -150,7 +138,7 @@ if __name__=='__main__':
 	ubw += x0pos + x0vel + x0ang + x0angrate
 	#solver's guess
 	w0 += x0pos + x0vel + x0ang + x0angrate
-
+	gravity, mass, kF, kM, Len = project_parameters()
 	for k in range(N):
 		Uk = MX.sym('U_' + str(k), 4)
 		w   += [Uk]
