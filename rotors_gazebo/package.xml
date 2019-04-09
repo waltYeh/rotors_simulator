@@ -27,7 +27,8 @@
   <build_depend>roscpp</build_depend>
   <build_depend>rotors_gazebo_plugins</build_depend>
   <build_depend>sensor_msgs</build_depend>
-
+  <build_depend>roslib</build_depend>
+  <build_depend>message_generation</build_depend>
   <!-- Dependencies needed after this package is compiled. -->
   <run_depend>gazebo_msgs</run_depend>
   <run_depend>gazebo_plugins</run_depend>
@@ -38,5 +39,9 @@
   <run_depend>rotors_gazebo_plugins</run_depend>
   <run_depend>sensor_msgs</run_depend>
   <run_depend>xacro</run_depend>
+  <run_depend>roslib</run_depend> 
+  <run_depend>message_runtime</run_depend>
+
+  <!--exec_depend>message_runtime</exec_depend-->
 
 </package>

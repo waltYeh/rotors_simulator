@@ -10,7 +10,12 @@ add_definitions(-std=c++11)
 # We need Gazebo version >= 3.0.0 to generate iris.sdf file
 # (gz sdf ... command needs to be available)
 find_package(gazebo REQUIRED)
-
+find_package(catkin REQUIRED COMPONENTS gazebo_msgs geometry_msgs mav_msgs trajectory_msgs roscpp rospy std_msgs sensor_msgs message_generation)
+add_service_files(
+  FILES
+  traj_gen_service.srv
+)
+generate_messages(DEPENDENCIES mav_msgs trajectory_msgs)
 if(${gazebo_VERSION_MAJOR} GREATER 2)
     message(STATUS "Building iris.sdf.")
     
@@ -43,7 +48,7 @@ if(NO_ROS)
   return()
 endif()
 
-find_package(catkin REQUIRED COMPONENTS gazebo_msgs geometry_msgs mav_msgs roscpp rospy sensor_msgs)
+
 
 catkin_package(
   CATKIN_DEPENDS

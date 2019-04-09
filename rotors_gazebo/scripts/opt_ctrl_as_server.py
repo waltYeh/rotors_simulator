@@ -1,10 +1,18 @@
+#!/usr/bin/env python
 from casadi import *
 import casadi.tools as ctools
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
-
+from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
+from geometry_msgs.msg import Vector3
+from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Transform, Quaternion
+import rospy
+from rotors_gazebo.srv import *
+import tf
+import sys
 def project_parameters():
 	kF=10
 	kM=2
@@ -13,7 +21,7 @@ def project_parameters():
 	gravity=9.81
 	return gravity, mass, kF, kM, Len
 
-if __name__=='__main__':
+def handle_traj_gen(req):
 	vel_constr = 5
 	angle_constr = 3.14159265/4
 	yaw_init_state = 0
@@ -64,7 +72,7 @@ if __name__=='__main__':
 	u4 = MX.sym('u4')
 	u = vertcat(u1, u2, u3, u4)
 #
-	tf = MX.sym('tf')
+	t_transf = MX.sym('t_transf')
 #
 	gravity, mass, kF, kM, Len = project_parameters()
 	dangvel_Body_dt = vertcat(kF*Len*(u2-u4), kF*Len*(-u1+u3), kM*(u1-u2+u3-u4))
@@ -95,13 +103,13 @@ if __name__=='__main__':
 	angrate_W_y = R_B2W_21*angrate_x + R_B2W_22*angrate_y + R_B2W_23*angrate_z
 	angrate_W_z = R_B2W_31*angrate_x + R_B2W_32*angrate_y + R_B2W_33*angrate_z
 	angrate_W=vertcat(angrate_W_x,angrate_W_y,angrate_W_z)
-	xdot = vertcat(vel, new_acc, angrate_W, dangvel_Body_dt)*tf
+	xdot = vertcat(vel, new_acc, angrate_W, dangvel_Body_dt)*t_transf
 #
-	L = (u1**2 + u2**2 + u3**2 + u4**2)*tf
+	L = (u1**2 + u2**2 + u3**2 + u4**2)*t_transf
 #
 	M = 1
 	
-	f = Function('f', [x, u, tf],[xdot, L])
+	f = Function('f', [x, u, t_transf],[xdot, L])
 	X0 = MX.sym('X0', 12)
 	U=MX.sym('U',4)
 	TF = MX.sym('TF')
@@ -267,35 +275,35 @@ if __name__=='__main__':
 	tgrid = tgrid1+tgrid2+tgrid3
 	tgridu = tgrid1+tgrid2+tgrid3u
 
-	fig = plt.figure(1)
-	plt.clf()
-	pos_subplot = fig.add_subplot(511)
-	pos_subplot.plot(tgrid, pos_x_opt, '--')
-	pos_subplot.plot(tgrid, pos_y_opt, '--')
-	pos_subplot.plot(tgrid, pos_z_opt, '--')
-	# pos_subplot.xlabel('t')
-	# pos_subplot.legend(['x','y','z'])
+	msg=MultiDOFJointTrajectory()
+	msg.header.frame_id =''
+	msg.header.stamp = rospy.Time.now()
+	msg.joint_names = ["base_link"]
+	for i in range(len(tgrid)):
+		transforms = Transform()
+		transforms.translation.x = pos_x_opt[i]
+		transforms.translation.y = pos_y_opt[i]
+		transforms.translation.z = pos_z_opt[i]
 
-	vel_subplot = fig.add_subplot(512)
-	vel_subplot.plot(tgrid, vel_x_opt, '-')
-	vel_subplot.plot(tgrid, vel_y_opt, '-')
-	vel_subplot.plot(tgrid, vel_z_opt, '-')
-	# vel_subplot.xlabel('t')
-	# vel_subplot.legend(['vx','vy','vz'])
-	ang_subplot = fig.add_subplot(513)
-	ang_subplot.plot(tgrid, ang_x_opt, '-')
-	ang_subplot.plot(tgrid, ang_y_opt, '-')
-	ang_subplot.plot(tgrid, ang_z_opt, '-')
-	angr_subplot = fig.add_subplot(514)
-	angr_subplot.plot(tgrid, angr_x_opt, '-')
-	angr_subplot.plot(tgrid, angr_y_opt, '-')
-	angr_subplot.plot(tgrid, angr_z_opt, '-')
-	rotor_subplot = fig.add_subplot(515)
-	rotor_subplot.plot(tgridu, u1_opt,'-')
-	rotor_subplot.plot(tgridu, u2_opt,'-')
-	rotor_subplot.plot(tgridu, u3_opt,'-')
-	rotor_subplot.plot(tgridu, u4_opt,'-')
-	# rotor_subplot.xlabel('t')
-	# rotor_subplot.legend(['1','2','3','4'])
-	plt.grid()
-	plt.show()
+		quaternion = tf.transformations.quaternion_from_euler(ang_x_opt[i], ang_y_opt[i], ang_z_opt[i])
+		transforms.rotation = Quaternion(quaternion[0],quaternion[1],quaternion[2],quaternion[3])
+
+		velocities = Twist()
+		velocities.linear.x = vel_x_opt[i]
+		velocities.linear.y = vel_y_opt[i]
+		velocities.linear.z = vel_z_opt[i]
+		# velocities.angular.x = 
+		accelerations=Twist()
+		# time_from_start += rospy.Duration.from_sec(waypoints[i].waiting_time)
+		point = MultiDOFJointTrajectoryPoint([transforms],[velocities],[accelerations],rospy.Duration.from_sec(tgrid[i]))
+		
+		msg.points.append(point)
+	return msg
+
+def traj_gen_server():
+	rospy.init_node('traj_gen_server')
+	s = rospy.Service('traj_gen', traj_gen_service, handle_traj_gen)
+	print "Ready to generate trajectory"
+	rospy.spin()
+if __name__ == "__main__":
+	traj_gen_server()

@@ -10,7 +10,7 @@ import tf
 import rospy
 import sys
 DEG_2_RAD = 0.0174532925
-kNanoSecondsInSecond = 1000000000;
+kNanoSecondsInSecond = 1000000000
 sim_running = False
 def callback(data):
 	global sim_running

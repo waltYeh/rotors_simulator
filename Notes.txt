@@ -1,0 +1,19 @@
+python
+1. symbolic computing
+fixed rotation in modeling, 
+multiply the J1,J2,J3 with the respective time interval as costs,
+no need to add 1*time_interval
+fixed the bounds for yaw
+change the lower bound for time interval to 0.1, else infeasible with 0
+
+2. py in ros
+make executable chmod +x scripts/add_two_ints_server.py
+add to launch: /home/walt/catkin_ws/src/rotors_simulator/rotors_gazebo/launch/mav_with_waypoint_py.launch
+#!/usr/bin/env python as first line
+global declare
+rospy.init_node
+rospy.loginfo == ROS_INFO
+sub: topic, type, callback
+pub: topic, type, queue
+rospy.Duration.from_sec(1)
+

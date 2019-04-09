@@ -1,0 +1,3 @@
+bool job_deliver
+---
+trajectory_msgs/MultiDOFJointTrajectory trj
