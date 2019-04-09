@@ -154,8 +154,12 @@ if __name__=='__main__':
 	for k in range(N):
 		Uk = MX.sym('U_' + str(k), 4)
 		w   += [Uk]
-		lbw += [0,0,0,0]
-		ubw += [input_constr,input_constr,input_constr,input_constr]
+		if k!=0:
+			lbw += [0,0,0,0]
+			ubw += [input_constr,input_constr,input_constr,input_constr]
+		else:
+			lbw += [0.25*gravity*mass,0.25*gravity*mass,0.25*gravity*mass,0.25*gravity*mass]
+			ubw += [0.25*gravity*mass,0.25*gravity*mass,0.25*gravity*mass,0.25*gravity*mass]
 		w0  += [0.25*gravity*mass,0.25*gravity*mass,0.25*gravity*mass,0.25*gravity*mass]
 
 		Fk = F(x0=Xk, p=Uk, tf_interval=t_interval_1)
@@ -201,8 +205,12 @@ if __name__=='__main__':
 	for k in range(2*N,3*N):
 		Uk = MX.sym('U_' + str(k), 4)
 		w   += [Uk]
-		lbw += [0,0,0,0]
-		ubw += [input_constr,input_constr,input_constr,input_constr]
+		if k!=3*N-1:
+			lbw += [0,0,0,0]
+			ubw += [input_constr,input_constr,input_constr,input_constr]
+		else:
+			lbw += [0.25*gravity*mass,0.25*gravity*mass,0.25*gravity*mass,0.25*gravity*mass]
+			ubw += [0.25*gravity*mass,0.25*gravity*mass,0.25*gravity*mass,0.25*gravity*mass]
 		w0  += [0.25*gravity*mass,0.25*gravity*mass,0.25*gravity*mass,0.25*gravity*mass]
 
 		Fk = F(x0=Xk, p=Uk, tf_interval=t_interval_3)
@@ -299,18 +307,18 @@ if __name__=='__main__':
 	ang_subplot.plot(tgrid, quat_opt_y, '-')
 	ang_subplot.plot(tgrid, quat_opt_z, '-')
 	ang_subplot.set_xlabel('t')
-	ang_subplot.legend(['roll','pitch','yaw'])
+	ang_subplot.legend(['qx','qy','qz'])
 	angr_subplot = fig.add_subplot(514)
 	angr_subplot.plot(tgrid, angr_x_opt, '-')
 	angr_subplot.plot(tgrid, angr_y_opt, '-')
 	angr_subplot.plot(tgrid, angr_z_opt, '-')
 	angr_subplot.set_xlabel('t')
-	angr_subplot.legend(['roll','pitch','yaw'])
+	angr_subplot.legend(['roll rate','pitch rate','yaw rate'])
 	rotor_subplot = fig.add_subplot(515)
-	rotor_subplot.plot(tgridu, u1_opt,'-')
-	rotor_subplot.plot(tgridu, u2_opt,'-')
-	rotor_subplot.plot(tgridu, u3_opt,'-')
-	rotor_subplot.plot(tgridu, u4_opt,'-')
+	rotor_subplot.step(tgridu, u1_opt,'-')
+	rotor_subplot.step(tgridu, u2_opt,'-')
+	rotor_subplot.step(tgridu, u3_opt,'-')
+	rotor_subplot.step(tgridu, u4_opt,'-')
 	rotor_subplot.set_xlabel('t')
 	rotor_subplot.legend(['1','2','3','4'])
 	# rotor_subplot.xlabel('t')
