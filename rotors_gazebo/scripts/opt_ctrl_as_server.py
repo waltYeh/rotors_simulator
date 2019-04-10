@@ -82,10 +82,10 @@ def handle_traj_gen(req):
 	x1pos = [2.,0.,2.5]
 	x1vel_y = 0
 	x1vel_z = 0
-	x2pos = [6.,4.,2.5]
-	x2vel_x = 0
+	x2pos = [2.,4.,2.5]
+	x2vel_y = 0
 	x2vel_z = 0
-	xFpos = [7.,6.,1.2]
+	xFpos = [0,0,1.2]
 	xFvel = [0,0,0]
 	xFang = [0,0,yaw_init_state]
 	xFangrate=[0,0,0]
@@ -186,8 +186,8 @@ def handle_traj_gen(req):
 			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,yaw_constr_minus, -inf,-inf,-inf]
 			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,yaw_constr_plus, inf,inf,inf]
 		else:
-			lbw += x2pos + [x2vel_x,-vel_constr,x2vel_z, -angle_constr,-angle_constr,yaw_constr_minus, -inf,-inf,-inf]
-			ubw += x2pos + [x2vel_x,vel_constr,x2vel_z, angle_constr,angle_constr,yaw_constr_plus, inf,inf,inf]
+			lbw += x2pos + [-vel_constr,x2vel_y,x2vel_z, -angle_constr,-angle_constr,yaw_constr_minus, -inf,-inf,-inf]
+			ubw += x2pos + [vel_constr,x2vel_y,x2vel_z, angle_constr,angle_constr,yaw_constr_plus, inf,inf,inf]
 		w0  += x1pos+[0,0,0, 0,0,3, 0,0,0]
 		g   += [Xk_end-Xk]
 		lbg += [0,0,0, 0,0,0, 0,0,0, 0,0,0]
