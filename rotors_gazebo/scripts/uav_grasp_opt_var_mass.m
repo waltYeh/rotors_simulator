@@ -98,7 +98,7 @@ figure(1)
 subplot(4,1,1)
 plot(tx,x_opt,tx,z_opt)
 hold on
-plot(tx(length(tx1)),x_opt(length(tx1)),'*')
+plot([tx(N+1),tx(N+1)],[-5,5],'--')
 hold off
 % title('pos')
 xlabel('t (s)')
@@ -107,6 +107,9 @@ legend('x','z')
 grid
 subplot(4,1,2)
 plot(tx, xdot_opt,tx,zdot_opt)
+hold on
+plot([tx(N+1),tx(N+1)],[-vel_constr ,vel_constr ],'--')
+hold off
 % title('vel')
 xlabel('t (s)')
 ylabel('vel (m/s)')
@@ -114,6 +117,9 @@ legend('x','z')
 grid
 subplot(4,1,3)
 plot(tx,theta_opt,tx,beta_opt)
+hold on
+plot([tx(N+1),tx(N+1)],[-2,4],'--')
+hold off
 % title('acc')
 xlabel('t (s)')
 ylabel('angle (rad)')
@@ -121,25 +127,38 @@ legend('theta','beta')
 grid
 subplot(4,1,4)
 plot(tx,thetadot_opt,tx,betadot_opt)
+hold on
+plot([tx(N+1),tx(N+1)],[-20,40],'--')
+hold off
 % title('acc')
 xlabel('t (s)')
 ylabel('anglar rate (rad/s)')
 legend('theta','beta')
+grid
 figure(2)
 subplot(3,1,1)
 plot(tu,thrust_opt)
+hold on
+plot([tx(N),tx(N)],[0,thrust_constr],'--')
+hold off
 xlabel('t (s)')
 ylabel('thrust (N)')
 % legend('x','y','z')
 grid
 subplot(3,1,2)
 plot(tu,M_drone_opt)
+hold on
+plot([tx(N),tx(N)],[-M_drone_constr,M_drone_constr],'--')
+hold off
 xlabel('t (s)')
 ylabel('M drone (Nm)')
 % legend('x','y','z')
 grid
 subplot(3,1,3)
 plot(tu,M_arm_opt)
+hold on
+plot([tx(N),tx(N)],[-M_arm_constr,M_arm_constr],'--')
+hold off
 xlabel('t (s)')
 ylabel('M arm (Nm)')
 % legend('x','y','z')
@@ -158,6 +177,35 @@ for i=1:length(tx)
     end
 end
 hold off
+grid
+dx_dt = zeros(8,2*N);
+X_all_opt = sol.value(X);
+U_all_opt = sol.value(U);
+for i=1:length(tu)
+    if i<=N
+        dx_dt(:,i) = diff_eq_grasping_time_trans(0,X_all_opt(:,i),U_all_opt(:,i),1,0);
+    else
+        dx_dt(:,i) = diff_eq_grasping_time_trans(0,X_all_opt(:,i),U_all_opt(:,i),1,payload);
+    end
+end
+figure(4)
+subplot(2,1,1)
+plot(tu,dx_dt(5,:),tu,dx_dt(6,:))
+hold on
+plot([tx(N),tx(N)],[-30,20],'--')
+hold off
+xlabel('t (s)')
+ylabel('acc (m/s^2)')
+legend('x','z')
+grid
+subplot(2,1,2)
+plot(tu,dx_dt(7,:),tu,dx_dt(8,:))
+hold on
+plot([tx(N),tx(N)],[-500,1000],'--')
+hold off
+xlabel('t (s)')
+ylabel('angular acc (rad/s^2)')
+legend('theta','beta')
 grid
 end
 function [xg,zg] = state_arm_end(x,z,beta,L_arm)
@@ -180,7 +228,7 @@ M_arm = u(3);
 D = [mg+mq,0,0,-mg*L*sin(beta);0,mg+mq,0,-mg*L*cos(beta);0,0,Iq,0;-mg*L*sin(beta),-mg*L*cos(beta),0,mg*L*L+Ig];
 F=[thrust*sin(theta);thrust*cos(theta);M_drone-M_arm;M_arm];
 C=[0,0,0,-L*mg*cos(beta)*beta_dot;0,0,0,L*mg*sin(beta)*beta_dot;0,0,0,0;0,0,0,0];
-G=[0;(mg+mq)*gravity;0;-mg*gravity*L*sin(beta)];
+G=[0;(mg+mq)*gravity;0;-mg*gravity*L*cos(beta)];
 q_dot = x(5:8);
 q_dotdot=D\(F-C*q_dot-G);
 dx=[q_dot;q_dotdot]*t_trans;
