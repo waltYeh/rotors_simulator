@@ -184,6 +184,8 @@ if __name__=='__main__':
 			lbw += [-inf,-inf,-inf, -vel_constr,-vel_constr,-vel_constr, -angle_constr,-angle_constr,yaw_constr_minus, -inf,-inf,-inf]
 			ubw += [inf,inf,inf, vel_constr,vel_constr,vel_constr, angle_constr,angle_constr,yaw_constr_plus, inf,inf,inf]
 		else:
+
+			##????????????
 			lbw += x2pos + [-vel_constr,x2vel_y,x2vel_z, -angle_constr,-angle_constr,yaw_constr_minus, -inf,-inf,-inf]
 			ubw += x2pos + [vel_constr,x2vel_y,x2vel_z, angle_constr,angle_constr,yaw_constr_plus, inf,inf,inf]
 		w0  += x1pos+[0,0,0, 0,0,3, 0,0,0]
